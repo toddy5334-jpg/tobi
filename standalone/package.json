@@ -1,0 +1,19 @@
+{
+  "name": "nutrimap-ai",
+  "version": "1.0.0",
+  "description": "NutriMap AI - Sistema web de tiendas saludables, catálogo en Supabase, Google Maps y asistente Gemini AI",
+  "main": "server.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^3.6.1",
+    "@supabase/supabase-js": "^2.119.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

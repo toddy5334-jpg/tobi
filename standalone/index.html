@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriMap AI — Mapa, Catálogo y Asistente Saludable</title>
+  <link rel="stylesheet" href="css.css" />
+</head>
+<body>
+  <div id="quota-banner" class="hidden" style="background:#fffbeb;border-bottom:1px solid #fde68a;color:#78350f;padding:0.625rem 1rem;font-size:0.85rem;text-align:center;position:sticky;top:0;z-index:50;">
+    <span>
+      Google Maps Platform quota reached. If you are the app owner, visit
+      <a href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors" target="_blank" rel="noopener noreferrer" style="text-decoration:underline;font-weight:600;color:#451a03;">maps developer site</a>
+      for instructions to update your account.
+    </span>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h1>NutriMap AI</h1>
+        <p>Tiendas de alimentación saludable, catálogo en Supabase, Google Maps y asistente Gemini</p>
+      </div>
+      <nav class="quick-nav" aria-label="Navegación rápida">
+        <a href="#mapa">Mapa</a>
+        <a href="#catalogo">Catálogo</a>
+        <a href="#gestion">Gestión CRUD</a>
+        <a href="#asistente">Asistente AI</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="indicators-bar" aria-label="Indicadores del sistema">
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <span class="kpi-label">Establecimientos</span>
+          <strong class="kpi-value" id="kpi-stores">0</strong>
+          <small class="kpi-note" id="kpi-stores-note">Mínimo requerido: 5</small>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Productos</span>
+          <strong class="kpi-value" id="kpi-products">0</strong>
+          <small class="kpi-note">Total registrados</small>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Disponibles</span>
+          <strong class="kpi-value" id="kpi-available">0</strong>
+          <small class="kpi-note">Con stock activo</small>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-label">Categorías</span>
+          <strong class="kpi-value" id="kpi-categories">0</strong>
+          <small class="kpi-note">Tipos de alimento</small>
+        </article>
+      </div>
+      <div class="status-pills" id="status-pills">
+        <span class="status-pill status-loading" id="pill-supabase">Supabase: verificando...</span>
+        <span class="status-pill status-loading" id="pill-maps">Google Maps: verificando...</span>
+        <span class="status-pill status-loading" id="pill-gemini">Gemini AI: verificando...</span>
+      </div>
+    </section>
+
+    <div id="alert-banner" class="alert-banner hidden" role="alert"></div>
+
+    <section class="card" id="mapa">
+      <div class="section-head">
+        <h2>Mapa de Establecimientos (Google Maps)</h2>
+        <span class="section-hint">Haz clic en un marcador para ver información, o en el mapa para copiar coordenadas al formulario.</span>
+      </div>
+      <div class="map-layout">
+        <div id="map" class="map-box">
+          <p class="map-placeholder">Cargando mapa...</p>
+        </div>
+        <aside id="marker-detail" class="marker-card">
+          <h3>Selecciona un marcador</h3>
+          <p>Haz clic en cualquier pin del mapa para ver su dirección, contacto, categorías y productos disponibles.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="card" id="catalogo">
+      <div class="section-head">
+        <h2>Catálogo de Productos y Establecimientos</h2>
+        <span class="section-hint" id="products-count">0 productos</span>
+      </div>
+      <div class="filters">
+        <input type="text" id="search-input" placeholder="Buscar producto, categoría o tienda (ej. avena, integral)..." />
+        <select id="filter-category" aria-label="Filtrar por categoría">
+          <option value="">Todas las categorías</option>
+        </select>
+        <select id="filter-store" aria-label="Filtrar por establecimiento">
+          <option value="">Todos los establecimientos</option>
+        </select>
+        <select id="filter-availability" aria-label="Filtrar por disponibilidad">
+          <option value="">Toda disponibilidad</option>
+          <option value="true">Solo disponibles</option>
+          <option value="false">Solo agotados</option>
+        </select>
+        <button type="button" id="btn-clear-filters" class="btn-secondary">Limpiar</button>
+      </div>
+      <div id="products-list" class="grid-cards"></div>
+    </section>
+
+    <section class="grid-2" id="gestion">
+      <div class="card">
+        <h2 id="store-form-title">Nuevo Establecimiento</h2>
+        <p class="hint">Registra o edita tiendas saludables. Tip: haz clic en cualquier punto del mapa para llenar latitud y longitud.</p>
+        <form id="store-form" class="form-stack">
+          <input type="hidden" id="store-id" />
+          <label class="field-label" for="store-name">Nombre del establecimiento</label>
+          <input type="text" id="store-name" placeholder="Ej. Verde & Vital Asunción" required />
+          <label class="field-label" for="store-address">Dirección</label>
+          <input type="text" id="store-address" placeholder="Ej. Av. Mariscal López 1450, Asunción" required />
+          <label class="field-label" for="store-contact">Teléfono o contacto</label>
+          <input type="text" id="store-contact" placeholder="Ej. +595 21 600 101" required />
+          <div class="form-row">
+            <div>
+              <label class="field-label" for="store-lat">Latitud</label>
+              <input type="number" step="any" id="store-lat" placeholder="-25.29184" required />
+            </div>
+            <div>
+              <label class="field-label" for="store-lng">Longitud</label>
+              <input type="number" step="any" id="store-lng" placeholder="-57.59821" required />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Guardar Establecimiento</button>
+            <button type="button" id="btn-cancel-store" class="btn-secondary">Cancelar</button>
+          </div>
+        </form>
+        <h3 class="subhead">Establecimientos Registrados</h3>
+        <div id="stores-admin-list" class="admin-list"></div>
+      </div>
+
+      <div class="card">
+        <h2 id="product-form-title">Nuevo Producto Alimenticio</h2>
+        <p class="hint">Asocia alimentos saludables a un establecimiento, indica su categoría, precio en Gs. y disponibilidad.</p>
+        <form id="product-form" class="form-stack">
+          <input type="hidden" id="product-id" />
+          <label class="field-label" for="product-store">Establecimiento</label>
+          <select id="product-store" required></select>
+          <label class="field-label" for="product-name">Nombre del producto</label>
+          <input type="text" id="product-name" placeholder="Ej. Avena tradicional arrollada 500g" required />
+          <label class="field-label" for="product-category">Categoría / Tipo de alimento</label>
+          <input type="text" id="product-category" placeholder="Ej. Integrales" list="category-suggestions" required />
+          <datalist id="category-suggestions">
+            <option value="Integrales"></option>
+            <option value="Frutas y Verduras"></option>
+            <option value="Semillas y Frutos Secos"></option>
+            <option value="Endulzantes Naturales"></option>
+            <option value="Bebidas Saludables"></option>
+            <option value="Legumbres"></option>
+            <option value="Proteínas"></option>
+            <option value="Lácteos y Fermentados"></option>
+          </datalist>
+          <label class="field-label" for="product-price">Precio (Gs.)</label>
+          <input type="number" step="1" min="0" id="product-price" placeholder="Ej. 18000" required />
+          <label class="checkbox-row">
+            <input type="checkbox" id="product-available" checked />
+            Disponible para la venta
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Guardar Producto</button>
+            <button type="button" id="btn-cancel-product" class="btn-secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="card" id="asistente">
+      <div class="section-head">
+        <h2>Asistente Inteligente (Gemini AI)</h2>
+        <button type="button" id="btn-reset-chat" class="btn-secondary btn-sm">Nueva conversación</button>
+      </div>
+      <p class="hint">
+        Consulta recetas, disponibilidad, precios y establecimientos en tiempo real desde Supabase.
+        <strong>Orientación alimentaria general, sin diagnósticos ni prescripciones médicas.</strong>
+      </p>
+      <div class="quick-prompts">
+        <button type="button" class="chip" data-prompt="¿Qué recetas puedo preparar con avena y banana?">¿Qué recetas puedo preparar con avena y banana?</button>
+        <button type="button" class="chip" data-prompt="¿Qué tiendas registradas venden productos integrales?">¿Qué tiendas registradas venden productos integrales?</button>
+        <button type="button" class="chip" data-prompt="¿Qué desayuno puedo preparar con los ingredientes disponibles?">¿Qué desayuno puedo preparar con los ingredientes disponibles?</button>
+        <button type="button" class="chip" data-prompt="¿Qué productos están disponibles y cuáles son sus precios?">Precios y disponibilidad actual</button>
+      </div>
+      <div id="chat-messages" class="chat-box" aria-live="polite">
+        <div class="msg msg-ai">¡Hola! Soy NutriMap AI. Puedo ayudarte a consultar tiendas registradas, productos disponibles, precios en guaraníes y sugerir recetas saludables con el stock real del sistema. ¿En qué te ayudo hoy?</div>
+      </div>
+      <form id="chat-form" class="chat-form">
+        <input type="text" id="chat-input" placeholder="Pregunta sobre recetas, tiendas integrales o precios..." required />
+        <button type="submit" id="chat-submit" class="btn-primary">Enviar</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>NutriMap AI — Proyecto Examen Práctico • Colegio Nacional EMD Asunción Escalada</p>
+  </footer>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
